@@ -1,0 +1,5 @@
+{
+  "name": "Math Trainer",
+  "description": "A comprehensive educational web application to monitor and improve mathematics skills through timed quizzes and progress tracking for students, with dashboards for teachers, parents, and admins.",
+  "requestFramePermissions": []
+}
