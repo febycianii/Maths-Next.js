@@ -1,4 +1,11 @@
-
+/**
+ * QuizSetup.tsx
+ *
+ * This page allows students to configure their quiz before starting.
+ * Users can select the mathematical operation (e.g., Addition), a difficulty stage,
+ * and a time limit per question. Once configured, the settings are passed to the
+ * Quiz page via React Router's location state.
+ */
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Operation } from '../types';
@@ -6,17 +13,23 @@ import { QUIZ_CONFIG, TIMER_OPTIONS } from '../constants';
 import StyledButton from '../components/common/StyledButton';
 
 const QuizSetup: React.FC = () => {
+    // State to manage the selected quiz settings.
     const [operation, setOperation] = useState<Operation>(Operation.Addition);
     const [stage, setStage] = useState(1);
     const [timer, setTimer] = useState(TIMER_OPTIONS[0]);
     const navigate = useNavigate();
 
+    /**
+     * Navigates to the quiz page, passing the selected configuration
+     * in the navigation state.
+     */
     const handleStartQuiz = () => {
         navigate('/quiz/start', {
             state: { operation, stage, timer }
         });
     };
 
+    // Get the configuration for the currently selected operation.
     const currentOperationConfig = QUIZ_CONFIG[operation];
 
     return (
@@ -31,7 +44,7 @@ const QuizSetup: React.FC = () => {
                         {Object.values(Operation).map(op => (
                             <button
                                 key={op}
-                                onClick={() => { setOperation(op); setStage(1); }}
+                                onClick={() => { setOperation(op); setStage(1); /* Reset stage on op change */ }}
                                 className={`p-4 rounded-lg text-center font-bold transition-all duration-200 ${operation === op ? 'bg-primary text-white shadow-lg scale-105' : 'bg-gray-200 hover:bg-gray-300'}`}
                             >
                                 {QUIZ_CONFIG[op].name}

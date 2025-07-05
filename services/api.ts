@@ -1,12 +1,21 @@
-
+/**
+ * api.ts
+ *
+ * This file acts as a mock backend API for the application.
+ * It uses the browser's localStorage to persist data, simulating a database.
+ * This allows the application to function without a real backend server,
+ * making it easy to run and test locally. All "API" methods are asynchronous
+ * to mimic real network requests.
+ */
 import { User, Role, QuizSession } from '../types';
 
+// Defines the keys used to store data in localStorage.
 const DB_KEYS = {
     USERS: 'math_trainer_users',
     SESSIONS: 'math_trainer_sessions'
 };
 
-// Types for credentials and signup data
+// Types for credentials and signup data for better type safety.
 export interface LoginCredentials {
     email: string;
     password: string;
@@ -20,7 +29,11 @@ export interface SignUpData {
 }
 
 
-// Helper functions to interact with localStorage
+/**
+ * Helper function to retrieve and parse data from localStorage.
+ * @param key The localStorage key.
+ * @returns An array of the specified type, or an empty array if not found or on error.
+ */
 const getFromDb = <T>(key: string): T[] => {
     try {
         const data = localStorage.getItem(key);
@@ -31,6 +44,11 @@ const getFromDb = <T>(key: string): T[] => {
     }
 };
 
+/**
+ * Helper function to save data to localStorage.
+ * @param key The localStorage key.
+ * @param data The data (array) to be saved.
+ */
 const saveToDb = <T>(key: string, data: T[]): void => {
     try {
         localStorage.setItem(key, JSON.stringify(data));
@@ -39,18 +57,20 @@ const saveToDb = <T>(key: string, data: T[]): void => {
     }
 };
 
-// The main API object that mimics a backend service
+// The main API object that centralizes all data-related operations.
 export const api = {
+    /**
+     * Initializes the database. If no users exist, it creates a default admin user.
+     * This ensures the application is usable immediately after setup.
+     */
     initialize: (): void => {
         const users = getFromDb<User>(DB_KEYS.USERS);
         if (users.length === 0) {
-            // Create a default admin user if no users exist
             const adminUser: User = {
                 id: 'admin_user',
                 name: 'Admin',
                 email: 'admin@mathtrainer.com',
-                // NOTE: In a real app, never store plain text passwords
-                password: 'admin', 
+                password: 'admin', // NOTE: Never store plain text passwords in a real app.
                 role: Role.Admin,
             };
             saveToDb(DB_KEYS.USERS, [adminUser]);
@@ -58,6 +78,12 @@ export const api = {
         }
     },
 
+    /**
+     * Simulates a user login.
+     * @param credentials The user's email and password.
+     * @returns The User object on success.
+     * @throws An error if credentials are invalid.
+     */
     login: async ({ email, password }: LoginCredentials): Promise<User> => {
         const users = getFromDb<User>(DB_KEYS.USERS);
         const user = users.find(u => u.email === email && u.password === password);
@@ -67,6 +93,11 @@ export const api = {
         return user;
     },
 
+    /**
+     * Simulates user registration.
+     * @param data The new user's details.
+     * @throws An error if the email already exists.
+     */
     signup: async (data: SignUpData): Promise<void> => {
         const users = getFromDb<User>(DB_KEYS.USERS);
         if (users.some(u => u.email === data.email)) {
@@ -79,6 +110,8 @@ export const api = {
         users.push(newUser);
         saveToDb(DB_KEYS.USERS, users);
     },
+
+    // --- User CRUD Operations ---
 
     getUsers: async (): Promise<User[]> => {
         return getFromDb<User>(DB_KEYS.USERS);
@@ -102,7 +135,7 @@ export const api = {
         }
 
         const originalUser = users[userIndex];
-        // Keep original password if the new one is empty/not provided
+        // Keep the original password if the new one is empty/not provided.
         if (!updatedUser.password) {
             updatedUser.password = originalUser.password;
         }
@@ -118,11 +151,22 @@ export const api = {
         saveToDb(DB_KEYS.USERS, users);
     },
 
+    // --- Quiz Session Operations ---
+
+    /**
+     * Retrieves all quiz sessions for a specific user, sorted by date descending.
+     * @param userId The ID of the user.
+     * @returns A promise that resolves to an array of QuizSession objects.
+     */
     getQuizSessionsByUserId: async (userId: string): Promise<QuizSession[]> => {
         const sessions = getFromDb<QuizSession>(DB_KEYS.SESSIONS);
         return sessions.filter(s => s.userId === userId).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     },
 
+    /**
+     * Saves a completed quiz session to the database.
+     * @param session The QuizSession object to save.
+     */
     saveQuizSession: async (session: QuizSession): Promise<void> => {
         const sessions = getFromDb<QuizSession>(DB_KEYS.SESSIONS);
         sessions.push(session);

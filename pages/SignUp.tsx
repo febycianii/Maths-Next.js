@@ -1,4 +1,11 @@
-
+/**
+ * SignUp.tsx
+ *
+ * This page component renders the user registration form.
+ * It collects user details (name, email, password, role), performs basic validation,
+ * and calls the `signup` function from the `useAuth` hook. On successful registration,
+ * it alerts the user and redirects them to the login page.
+ */
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
@@ -7,23 +14,32 @@ import StyledButton from '../components/common/StyledButton';
 import { APP_NAME } from '../constants';
 
 const SignUp: React.FC = () => {
+    // State for form inputs and error messages.
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [role, setRole] = useState<Role>(Role.Student);
     const [error, setError] = useState('');
+    
     const { signup } = useAuth();
     const navigate = useNavigate();
 
+    /**
+     * Handles the form submission for user registration.
+     */
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
+        
+        // Basic password length validation.
         if (password.length < 6) {
             setError('Password must be at least 6 characters long.');
             return;
         }
+
         try {
             await signup({ name, email, password, role });
+            // On success, notify the user and redirect to login.
             alert('Registration successful! Please log in.');
             navigate('/login');
         } catch (err: any) {
@@ -41,11 +57,13 @@ const SignUp: React.FC = () => {
                     </h2>
                 </div>
                 <form className="mt-8 space-y-6 bg-white p-8 shadow-lg rounded-lg" onSubmit={handleSubmit}>
+                    {/* Display registration error if it exists */}
                     {error && <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">{error}</div>}
                     <div className="space-y-4">
                         <input name="name" type="text" required className="appearance-none rounded-md relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-primary focus:border-primary" placeholder="Full Name" value={name} onChange={e => setName(e.target.value)} />
                         <input name="email" type="email" autoComplete="email" required className="appearance-none rounded-md relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-primary focus:border-primary" placeholder="Email address" value={email} onChange={e => setEmail(e.target.value)} />
                         <input name="password" type="password" autoComplete="new-password" required className="appearance-none rounded-md relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-primary focus:border-primary" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} />
+                        {/* Role selection dropdown */}
                         <select name="role" value={role} onChange={e => setRole(e.target.value as Role)} className="appearance-none rounded-md relative block w-full px-3 py-3 border border-gray-300 bg-white text-gray-900 focus:outline-none focus:ring-primary focus:border-primary">
                             <option value={Role.Student}>I am a Student</option>
                             <option value={Role.Teacher}>I am a Teacher</option>
@@ -59,6 +77,7 @@ const SignUp: React.FC = () => {
                         </StyledButton>
                     </div>
                 </form>
+                {/* Link to Login page */}
                 <p className="mt-2 text-center text-sm text-gray-600">
                     Already have an account?{' '}
                     <Link to="/login" className="font-medium text-primary hover:text-primary-hover">

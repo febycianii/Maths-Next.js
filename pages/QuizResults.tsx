@@ -1,4 +1,11 @@
-
+/**
+ * QuizResults.tsx
+ *
+ * This page displays the results of a completed quiz session.
+ * It receives the session data via React Router's location state.
+ * It shows the final score, a summary of correct/incorrect answers,
+ * and a detailed breakdown of each question.
+ */
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { QuizSession } from '../types';
@@ -8,8 +15,10 @@ import { CheckCircleIcon, XCircleIcon } from '../components/Icons';
 const QuizResults: React.FC = () => {
     const location = useLocation();
     const navigate = useNavigate();
+    // Retrieve the quiz session data passed from the Quiz page.
     const session: QuizSession | undefined = location.state?.session;
 
+    // Handle the case where a user navigates here directly without a session.
     if (!session) {
         return (
             <div className="text-center">
@@ -19,10 +28,12 @@ const QuizResults: React.FC = () => {
         );
     }
     
+    // Determine the color for the score based on performance.
     const scoreColor = session.score >= 80 ? 'text-green-500' : session.score >= 50 ? 'text-orange-500' : 'text-red-500';
 
     return (
         <div className="max-w-4xl mx-auto">
+            {/* Score Summary Card */}
             <div className="bg-white p-8 rounded-lg shadow-xl text-center">
                 <h1 className="text-4xl font-bold text-gray-800">Quiz Complete!</h1>
                 <p className="text-xl text-gray-600 mt-2">Here's how you did:</p>
@@ -39,12 +50,14 @@ const QuizResults: React.FC = () => {
                 </div>
             </div>
 
+            {/* Question Breakdown Card */}
             <div className="mt-8 bg-white p-8 rounded-lg shadow-xl">
                 <h2 className="text-2xl font-bold mb-4">Question Breakdown</h2>
                 <ul className="divide-y divide-gray-200">
                     {session.questions.map((q, index) => (
                         <li key={index} className="py-4 flex items-center justify-between">
                             <div className="flex items-center">
+                                {/* Show a check or X icon based on correctness */}
                                 {q.isCorrect ? <CheckCircleIcon className="w-6 h-6 text-green-500 mr-4"/> : <XCircleIcon className="w-6 h-6 text-red-500 mr-4"/>}
                                 <span className="text-lg font-mono">{q.question} = {q.correctAnswer}</span>
                             </div>

@@ -1,4 +1,11 @@
-
+/**
+ * StudentDashboard.tsx
+ *
+ * This component serves as the main dashboard for users with the 'student' role.
+ * It provides a welcome message, a call-to-action to start a new quiz,
+ * and visualizes the student's performance over time using a progress chart
+ * and a list of recent quiz sessions.
+ */
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
@@ -11,9 +18,12 @@ import { PlusCircleIcon, BarChartIcon } from '../Icons';
 const StudentDashboard: React.FC = () => {
     const { user } = useAuth();
     const navigate = useNavigate();
+    // State to store the student's quiz sessions.
     const [sessions, setSessions] = useState<QuizSession[]>([]);
+    // State to manage loading status while fetching data.
     const [isLoading, setIsLoading] = useState(true);
 
+    // Fetch quiz sessions for the logged-in user when the component mounts.
     useEffect(() => {
         const fetchSessions = async () => {
             if (user) {
@@ -25,6 +35,11 @@ const StudentDashboard: React.FC = () => {
         fetchSessions();
     }, [user]);
 
+    /**
+     * Calculates the average score for a specific math operation.
+     * @param operation The operation to calculate the average for.
+     * @returns The average score as a percentage, or 0 if no sessions exist for that operation.
+     */
     const getAverageScore = (operation: Operation) => {
         const opSessions = sessions.filter(s => s.operation === operation);
         if (opSessions.length === 0) return 0;
@@ -32,6 +47,7 @@ const StudentDashboard: React.FC = () => {
         return Math.round(totalScore / opSessions.length);
     };
     
+    // Prepare data for the ProgressChart component.
     const chartData = [
         { name: 'Addition', score: getAverageScore(Operation.Addition) },
         { name: 'Subtraction', score: getAverageScore(Operation.Subtraction) },
@@ -40,6 +56,7 @@ const StudentDashboard: React.FC = () => {
 
     return (
         <div className="space-y-8">
+            {/* Header section with welcome message and "Start Quiz" button */}
             <div className="bg-white p-6 rounded-lg shadow-md flex justify-between items-center">
                 <div>
                     <h2 className="text-2xl font-bold text-gray-800">Welcome, {user?.name}!</h2>
@@ -51,11 +68,14 @@ const StudentDashboard: React.FC = () => {
                 </StyledButton>
             </div>
 
+            {/* Conditional rendering based on loading and data availability */}
             {isLoading ? (
                 <p>Loading progress...</p>
             ) : sessions.length > 0 ? (
                 <>
+                {/* Performance chart */}
                 <ProgressChart data={chartData} />
+                {/* List of recent quizzes */}
                 <div className="bg-white p-6 rounded-lg shadow-md">
                     <h3 className="text-xl font-semibold mb-4 text-gray-700">Recent Quizzes</h3>
                     <ul className="divide-y divide-gray-200">
@@ -74,6 +94,7 @@ const StudentDashboard: React.FC = () => {
                 </div>
                 </>
             ) : (
+                // Empty state when no quizzes have been taken yet
                 <div className="text-center py-10 bg-white rounded-lg shadow-md">
                     <BarChartIcon className="w-16 h-16 mx-auto text-gray-300" />
                     <h3 className="mt-4 text-xl font-semibold text-gray-700">No quizzes taken yet</h3>
