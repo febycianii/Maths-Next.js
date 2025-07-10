@@ -26,9 +26,20 @@ const Quiz: React.FC = () => {
     const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
     const [currentAnswer, setCurrentAnswer] = useState('');
     const [timeLeft, setTimeLeft] = useState(timer);
+    const [isQuizActive, setIsQuizActive] = useState(false);
     
     // Convenience variable for the current question object.
     const currentQ = questions[currentQuestionIndex];
+
+    /**
+     * Generates a new question on-demand
+     */
+    const generateNewQuestion = useCallback((index: number): QuizQuestion => {
+        return {
+            ...generateQuestion(operation, stage),
+            timeTaken: 0,
+        };
+    }, [operation, stage]);
 
     /**
      * This function handles the progression to the next question or the end of the quiz.
@@ -52,9 +63,16 @@ const Quiz: React.FC = () => {
         
         // If there are more questions, advance to the next one.
         if (currentQuestionIndex < TOTAL_QUESTIONS - 1) {
-            setCurrentQuestionIndex(prev => prev + 1);
+            const nextIndex = currentQuestionIndex + 1;
+            setCurrentQuestionIndex(nextIndex);
             setCurrentAnswer('');
             setTimeLeft(timer); // Reset the timer.
+            
+            // Generate the next question on-demand
+            const nextQuestion = generateNewQuestion(nextIndex);
+            const newQuestions = [...updatedQuestions];
+            newQuestions[nextIndex] = nextQuestion;
+            setQuestions(newQuestions);
         } else {
             // End of the quiz.
             const finalQuestions = updatedQuestions;
@@ -81,7 +99,7 @@ const Quiz: React.FC = () => {
                 navigate('/dashboard');
             });
         }
-    }, [currentAnswer, currentQ, currentQuestionIndex, navigate, operation, questions, stage, timer, timeLeft, user]);
+    }, [currentAnswer, currentQ, currentQuestionIndex, navigate, operation, questions, stage, timer, timeLeft, user, generateNewQuestion]);
 
     // useRef to hold the latest version of the nextQuestion callback.
     // This is a crucial pattern to avoid stale closures in the timer's setInterval,
@@ -99,18 +117,16 @@ const Quiz: React.FC = () => {
             return;
         }
 
-        // Generate all questions for the quiz at once.
-        const generatedQuestions: QuizQuestion[] = Array.from({ length: TOTAL_QUESTIONS }, () => ({
-            ...generateQuestion(operation, stage),
-            timeTaken: 0, // Initialize timeTaken.
-        }));
-        setQuestions(generatedQuestions);
+        // Generate only the first question initially for better performance
+        const firstQuestion = generateNewQuestion(0);
+        setQuestions([firstQuestion]);
         setTimeLeft(timer);
-    }, [operation, stage, timer, user, navigate]);
+        setIsQuizActive(true);
+    }, [operation, stage, timer, user, navigate, generateNewQuestion]);
 
     // Effect to manage the question timer.
     useEffect(() => {
-        if (questions.length === 0) return; // Don't start the timer until questions are loaded.
+        if (!isQuizActive || questions.length === 0) return; // Don't start the timer until quiz is active and questions are loaded.
         
         const interval = setInterval(() => {
             setTimeLeft(prev => {
@@ -125,7 +141,7 @@ const Quiz: React.FC = () => {
 
         // Cleanup function to clear the interval when the component unmounts or dependencies change.
         return () => clearInterval(interval);
-    }, [timer, questions.length]);
+    }, [timer, isQuizActive]); // Removed questions.length dependency to fix timer restart issue
 
     // Handle form submission when the user presses Enter.
     const handleSubmit = (e: React.FormEvent) => {

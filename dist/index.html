@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Math Trainer</title>
+    
+    <!-- Tailwind CSS via CDN -->
+    <!-- This script includes the Tailwind CSS framework, allowing for utility-first styling without a build step. -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Tailwind CSS Configuration -->
+    <!-- This script block configures and extends the default Tailwind theme. -->
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            // Custom color palette for consistent branding throughout the app.
+            colors: {
+              primary: {
+                DEFAULT: '#3b82f6', // blue-500
+                hover: '#2563eb',   // blue-600
+                focus: '#1d4ed8',   // blue-700
+              },
+              secondary: '#10b981', // emerald-500
+              accent: '#f97316',    // orange-500
+              danger: '#ef4444',    // red-500
+            },
+          },
+        },
+      };
+    </script>
+  <!-- Import Map -->
+  <!-- This allows using bare module specifiers (e.g., "react") in JavaScript modules, -->
+  <!-- mapping them to full URLs. This is crucial for the no-build-step setup. -->
+
+<link rel="stylesheet" href="/index.css">
+  <script type="importmap">
+{
+  "imports": {
+    "react/": "https://esm.sh/react@^19.1.0/",
+    "react": "https://esm.sh/react@^19.1.0",
+    "react-dom/": "https://esm.sh/react-dom@^19.1.0/",
+    "react-router-dom": "https://esm.sh/react-router-dom@^7.6.3",
+    "recharts": "https://esm.sh/recharts@^3.0.2"
+  }
+}
+</script>
+  <script type="module" crossorigin src="/assets/index-D07gUnV1.js"></script>
+</head>
+  <body class="bg-slate-100 antialiased">
+    <!-- The root element where the React application will be mounted. -->
+    <div id="root"></div>
+    
+    <!-- Main application script -->
+    <!-- The `type="module"` attribute enables ES6 module syntax in the browser. -->
+  </body>
+</html>
