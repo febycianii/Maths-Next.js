@@ -54,7 +54,8 @@ const Quiz: React.FC = () => {
         if (currentQuestionIndex < TOTAL_QUESTIONS - 1) {
             setCurrentQuestionIndex(prev => prev + 1);
             setCurrentAnswer('');
-            setTimeLeft(timer); // Reset the timer.
+            // Reset timer immediately to prevent race conditions
+            setTimeLeft(timer);
         } else {
             // End of the quiz.
             const finalQuestions = updatedQuestions;
@@ -89,7 +90,7 @@ const Quiz: React.FC = () => {
     const savedNextQuestion = useRef(nextQuestion);
     useEffect(() => {
         savedNextQuestion.current = nextQuestion;
-    });
+    }, [nextQuestion]);
 
     // Effect to initialize the quiz on component mount.
     useEffect(() => {
@@ -117,7 +118,7 @@ const Quiz: React.FC = () => {
                 if (prev <= 1) {
                     // When time expires, call the latest nextQuestion function via the ref.
                     savedNextQuestion.current();
-                    return timer; // This return won't be used as component state changes, but it's good practice.
+                    return 0; // Return 0 instead of timer to prevent immediate restart
                 }
                 return prev - 1;
             });
@@ -125,7 +126,7 @@ const Quiz: React.FC = () => {
 
         // Cleanup function to clear the interval when the component unmounts or dependencies change.
         return () => clearInterval(interval);
-    }, [timer, questions.length]);
+    }, [timer, questions.length, currentQuestionIndex]); // Added currentQuestionIndex to restart timer on question change
 
     // Handle form submission when the user presses Enter.
     const handleSubmit = (e: React.FormEvent) => {
