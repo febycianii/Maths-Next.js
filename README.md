@@ -94,7 +94,143 @@ You can sign up for other roles (Student, Teacher, Parent) through the "Sign up"
     *   After logging in as an admin, you will see the **User Management** dashboard.
     *   Here you can view all users, add new users, edit existing ones, or delete them.
 
-## 📁 Project Structure
+## � Deployment
+
+This application can be easily deployed to any static hosting service since it's a frontend-only application with no backend dependencies.
+
+### Prerequisites for Deployment
+
+*   **Node.js** (version 16 or higher) for building the application
+*   **Environment Variables** (optional): If using Gemini API features, you'll need to set the `GEMINI_API_KEY` environment variable
+
+### Building for Production
+
+1.  **Install dependencies:**
+    ```bash
+    npm install
+    ```
+
+2.  **Build the application:**
+    ```bash
+    npm run build
+    ```
+    This creates an optimized production build in the `dist/` directory.
+
+3.  **Preview the build locally** (optional):
+    ```bash
+    npm run preview
+    ```
+
+### Deployment Options
+
+#### **Option 1: Netlify**
+
+1.  Push your code to a Git repository (GitHub, GitLab, etc.)
+2.  Connect your repository to [Netlify](https://netlify.com)
+3.  Configure build settings:
+    *   **Build command:** `npm run build`
+    *   **Publish directory:** `dist`
+    *   **Environment variables:** Set `GEMINI_API_KEY` if needed
+4.  Deploy automatically on every push to your main branch
+
+#### **Option 2: Vercel**
+
+1.  Push your code to a Git repository
+2.  Connect your repository to [Vercel](https://vercel.com)
+3.  Vercel will automatically detect the Vite configuration
+4.  Set environment variables in the Vercel dashboard if needed
+5.  Deploy automatically on every push
+
+#### **Option 3: GitHub Pages**
+
+1.  Install the `gh-pages` package:
+    ```bash
+    npm install --save-dev gh-pages
+    ```
+
+2.  Add deployment script to `package.json`:
+    ```json
+    {
+      "scripts": {
+        "deploy": "npm run build && gh-pages -d dist"
+      }
+    }
+    ```
+
+3.  Configure `vite.config.ts` with your repository base:
+    ```typescript
+    export default defineConfig({
+      base: '/your-repo-name/',
+      // ... existing config
+    });
+    ```
+
+4.  Deploy:
+    ```bash
+    npm run deploy
+    ```
+
+#### **Option 4: Firebase Hosting**
+
+1.  Install Firebase CLI:
+    ```bash
+    npm install -g firebase-tools
+    ```
+
+2.  Initialize Firebase in your project:
+    ```bash
+    firebase init hosting
+    ```
+
+3.  Configure `firebase.json`:
+    ```json
+    {
+      "hosting": {
+        "public": "dist",
+        "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+        "rewrites": [
+          {
+            "source": "**",
+            "destination": "/index.html"
+          }
+        ]
+      }
+    }
+    ```
+
+4.  Build and deploy:
+    ```bash
+    npm run build
+    firebase deploy
+    ```
+
+#### **Option 5: Other Static Hosting Services**
+
+The built `dist/` folder can be uploaded to any static hosting service:
+*   **AWS S3 + CloudFront**
+*   **Azure Static Web Apps**
+*   **DigitalOcean App Platform**
+*   **Surge.sh**
+*   **Railway**
+
+### Environment Variables
+
+If your deployment uses features that require the Gemini API:
+
+1.  **Local Development:** Create a `.env` file in the root directory:
+    ```
+    GEMINI_API_KEY=your_api_key_here
+    ```
+
+2.  **Production:** Set the `GEMINI_API_KEY` environment variable in your hosting platform's dashboard
+
+### Post-Deployment Notes
+
+*   **Data Persistence:** The application uses browser `localStorage` for data storage. Each user's data is stored locally in their browser.
+*   **HTTPS:** Most modern hosting platforms provide HTTPS by default, which is recommended for production applications.
+*   **Custom Domain:** You can configure a custom domain through your hosting provider's dashboard.
+
+## �📁 Project Structure
 
 ```
 /
