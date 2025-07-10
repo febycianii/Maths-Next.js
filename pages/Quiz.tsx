@@ -26,16 +26,37 @@ const Quiz: React.FC = () => {
     const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
     const [currentAnswer, setCurrentAnswer] = useState('');
     const [timeLeft, setTimeLeft] = useState(timer);
+    const [quizEnded, setQuizEnded] = useState(false);
+    
+    // Refs to manage timer lifecycle properly
+    const timerRef = useRef<number | null>(null);
+    const isProcessingRef = useRef(false);
     
     // Convenience variable for the current question object.
     const currentQ = questions[currentQuestionIndex];
+
+    /**
+     * Clears the current timer safely
+     */
+    const clearTimer = useCallback(() => {
+        if (timerRef.current) {
+            clearInterval(timerRef.current);
+            timerRef.current = null;
+        }
+    }, []);
 
     /**
      * This function handles the progression to the next question or the end of the quiz.
      * It's called when the user submits an answer or when the timer runs out.
      */
     const nextQuestion = useCallback(() => {
-        if (!currentQ) return;
+        if (!currentQ || isProcessingRef.current || quizEnded) return;
+        
+        // Prevent multiple simultaneous calls
+        isProcessingRef.current = true;
+        
+        // Clear the timer immediately to prevent race conditions
+        clearTimer();
 
         // Process the answer for the current question.
         const userAnswerNum = parseInt(currentAnswer, 10);
@@ -55,8 +76,10 @@ const Quiz: React.FC = () => {
             setCurrentQuestionIndex(prev => prev + 1);
             setCurrentAnswer('');
             setTimeLeft(timer); // Reset the timer.
+            isProcessingRef.current = false; // Allow next processing
         } else {
             // End of the quiz.
+            setQuizEnded(true);
             const finalQuestions = updatedQuestions;
             const score = Math.round((finalQuestions.filter(q => q.isCorrect).length / TOTAL_QUESTIONS) * 100);
             
@@ -81,7 +104,7 @@ const Quiz: React.FC = () => {
                 navigate('/dashboard');
             });
         }
-    }, [currentAnswer, currentQ, currentQuestionIndex, navigate, operation, questions, stage, timer, timeLeft, user]);
+    }, [currentAnswer, currentQ, currentQuestionIndex, navigate, operation, questions, stage, timer, timeLeft, user, clearTimer, quizEnded]);
 
     // useRef to hold the latest version of the nextQuestion callback.
     // This is a crucial pattern to avoid stale closures in the timer's setInterval,
@@ -106,13 +129,17 @@ const Quiz: React.FC = () => {
         }));
         setQuestions(generatedQuestions);
         setTimeLeft(timer);
+        setQuizEnded(false);
     }, [operation, stage, timer, user, navigate]);
 
-    // Effect to manage the question timer.
+    // Effect to manage the question timer with proper cleanup
     useEffect(() => {
-        if (questions.length === 0) return; // Don't start the timer until questions are loaded.
+        if (questions.length === 0 || quizEnded) return; // Don't start the timer until questions are loaded or if quiz ended.
         
-        const interval = setInterval(() => {
+        // Clear any existing timer first
+        clearTimer();
+        
+        timerRef.current = setInterval(() => {
             setTimeLeft(prev => {
                 if (prev <= 1) {
                     // When time expires, call the latest nextQuestion function via the ref.
@@ -124,13 +151,24 @@ const Quiz: React.FC = () => {
         }, 1000);
 
         // Cleanup function to clear the interval when the component unmounts or dependencies change.
-        return () => clearInterval(interval);
-    }, [timer, questions.length]);
+        return () => {
+            clearTimer();
+        };
+    }, [questions.length, quizEnded, clearTimer]); // Removed timer from dependencies to prevent unnecessary re-runs
+
+    // Cleanup timer on unmount
+    useEffect(() => {
+        return () => {
+            clearTimer();
+        };
+    }, [clearTimer]);
 
     // Handle form submission when the user presses Enter.
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        nextQuestion();
+        if (!isProcessingRef.current) {
+            nextQuestion();
+        }
     };
     
     if (!currentQ) {
@@ -155,7 +193,8 @@ const Quiz: React.FC = () => {
                         value={currentAnswer}
                         onChange={(e) => setCurrentAnswer(e.target.value)}
                         autoFocus
-                        className="w-full text-4xl text-center p-4 border-b-4 border-primary focus:outline-none focus:border-blue-700 transition"
+                        disabled={quizEnded}
+                        className="w-full text-4xl text-center p-4 border-b-4 border-primary focus:outline-none focus:border-blue-700 transition disabled:opacity-50"
                         placeholder="Your answer"
                     />
                 </form>
