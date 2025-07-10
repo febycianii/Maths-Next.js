@@ -8,6 +8,7 @@
  * to mimic real network requests.
  */
 import { User, Role, QuizSession } from '../types';
+import { hashSHA256 } from '../utils/hash';
 
 // Defines the keys used to store data in localStorage.
 const DB_KEYS = {
@@ -66,11 +67,14 @@ export const api = {
     initialize: (): void => {
         const users = getFromDb<User>(DB_KEYS.USERS);
         if (users.length === 0) {
+            // Pre-computed SHA-256 hash for the default password "admin".
+            // Generated with: crypto.createHash('sha256').update('admin').digest('hex')
+            const ADMIN_PASSWORD_HASH = '8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918';
             const adminUser: User = {
                 id: 'admin_user',
                 name: 'Admin',
                 email: 'admin@mathtrainer.com',
-                password: 'admin', // NOTE: Never store plain text passwords in a real app.
+                password: ADMIN_PASSWORD_HASH,
                 role: Role.Admin,
             };
             saveToDb(DB_KEYS.USERS, [adminUser]);
@@ -86,7 +90,8 @@ export const api = {
      */
     login: async ({ email, password }: LoginCredentials): Promise<User> => {
         const users = getFromDb<User>(DB_KEYS.USERS);
-        const user = users.find(u => u.email === email && u.password === password);
+        const hashed = await hashSHA256(password);
+        const user = users.find(u => u.email === email && u.password === hashed);
         if (!user) {
             throw new Error('Invalid email or password.');
         }
@@ -103,9 +108,11 @@ export const api = {
         if (users.some(u => u.email === data.email)) {
             throw new Error('An account with this email already exists.');
         }
+        const hashed = await hashSHA256(data.password);
         const newUser: User = {
             id: `user_${Date.now()}`,
-            ...data
+            ...data,
+            password: hashed,
         };
         users.push(newUser);
         saveToDb(DB_KEYS.USERS, users);
@@ -122,9 +129,11 @@ export const api = {
         if (users.some(u => u.email === user.email && u.id !== user.id)) {
             throw new Error('User with this email already exists.');
         }
-        users.push(user);
+        const hashed = await hashSHA256(user.password);
+        const newUser = { ...user, password: hashed };
+        users.push(newUser);
         saveToDb(DB_KEYS.USERS, users);
-        return user;
+        return newUser;
     },
 
     updateUser: async (updatedUser: User): Promise<User> => {
@@ -134,10 +143,18 @@ export const api = {
             throw new Error('User not found.');
         }
 
+        // Ensure the email is unique across all users (excluding the user being updated)
+        if (users.some(u => u.email === updatedUser.email && u.id !== updatedUser.id)) {
+            throw new Error('Another user with this email already exists.');
+        }
+
         const originalUser = users[userIndex];
-        // Keep the original password if the new one is empty/not provided.
+
+        // Hash password if provided, otherwise keep the existing hash.
         if (!updatedUser.password) {
             updatedUser.password = originalUser.password;
+        } else if (updatedUser.password !== originalUser.password) {
+            updatedUser.password = await hashSHA256(updatedUser.password);
         }
 
         users[userIndex] = updatedUser;
