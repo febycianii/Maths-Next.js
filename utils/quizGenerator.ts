@@ -34,9 +34,11 @@ export const generateQuestion = (operation: Operation, stage: number): Omit<Quiz
             } else if (stage === 2) { // 0-10 + 0-10
                 num1 = getRandomInt(0, 10);
                 num2 = getRandomInt(0, 10);
-            } else { // 0-20 + 0-20
+            } else if (stage === 3) { // 0-20 + 0-20
                 num1 = getRandomInt(0, 20);
                 num2 = getRandomInt(0, 20);
+            } else {
+                throw new Error(`Unsupported addition stage: ${stage}. Supported stages: 1, 2, 3`);
             }
             question = `${num1} + ${num2}`;
             correctAnswer = num1 + num2;
@@ -47,9 +49,11 @@ export const generateQuestion = (operation: Operation, stage: number): Omit<Quiz
             if (stage === 1) { // Minuend (the first number) up to 10
                 num1 = getRandomInt(1, 10);
                 num2 = getRandomInt(0, num1);
-            } else { // Minuend up to 20
+            } else if (stage === 2) { // Minuend up to 20
                 num1 = getRandomInt(1, 20);
                 num2 = getRandomInt(0, num1);
+            } else {
+                throw new Error(`Unsupported subtraction stage: ${stage}. Supported stages: 1, 2`);
             }
             question = `${num1} - ${num2}`;
             correctAnswer = num1 - num2;
@@ -59,12 +63,14 @@ export const generateQuestion = (operation: Operation, stage: number): Omit<Quiz
             if (stage === 1) { // Times tables for 1-5
                 num1 = getRandomInt(1, 5);
                 num2 = getRandomInt(1, 5);
-            } else if (stage === 2) { // Times tables for 6-10
+            } else if (stage === 2) { // Times tables for 6-10 (both numbers should be 6-10)
                 num1 = getRandomInt(6, 10);
-                num2 = getRandomInt(1, 10);
-            } else { // Mixed times tables for 1-10
+                num2 = getRandomInt(6, 10);
+            } else if (stage === 3) { // Mixed times tables for 1-10
                 num1 = getRandomInt(1, 10);
                 num2 = getRandomInt(1, 10);
+            } else {
+                throw new Error(`Unsupported multiplication stage: ${stage}. Supported stages: 1, 2, 3`);
             }
             question = `${num1} × ${num2}`;
             correctAnswer = num1 * num2;
@@ -72,7 +78,7 @@ export const generateQuestion = (operation: Operation, stage: number): Omit<Quiz
 
         default:
             // Fallback for an unsupported operation.
-            throw new Error('Unknown operation');
+            throw new Error(`Unknown operation: ${operation}. Supported operations: ${Object.values(Operation).join(', ')}`);
     }
 
     return { question, correctAnswer };

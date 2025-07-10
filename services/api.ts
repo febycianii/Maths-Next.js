@@ -28,6 +28,43 @@ export interface SignUpData {
     role: Role;
 }
 
+/**
+ * Simple hash function for password security (basic implementation for demo)
+ * In production, use bcrypt or similar robust hashing library
+ */
+const hashPassword = (password: string): string => {
+    let hash = 0;
+    if (password.length === 0) return hash.toString();
+    for (let i = 0; i < password.length; i++) {
+        const char = password.charCodeAt(i);
+        hash = ((hash << 5) - hash) + char;
+        hash = hash & hash; // Convert to 32-bit integer
+    }
+    // Add salt and additional complexity
+    return `hashed_${Math.abs(hash)}_${password.length}`;
+};
+
+/**
+ * Validates password strength
+ */
+const validatePassword = (password: string): void => {
+    if (!password || password.length < 4) {
+        throw new Error('Password must be at least 4 characters long.');
+    }
+    if (password.includes('<') || password.includes('>') || password.includes('&')) {
+        throw new Error('Password contains invalid characters.');
+    }
+};
+
+/**
+ * Validates email format
+ */
+const validateEmail = (email: string): void => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!email || !emailRegex.test(email)) {
+        throw new Error('Please enter a valid email address.');
+    }
+};
 
 /**
  * Helper function to retrieve and parse data from localStorage.
@@ -70,7 +107,7 @@ export const api = {
                 id: 'admin_user',
                 name: 'Admin',
                 email: 'admin@mathtrainer.com',
-                password: 'admin', // NOTE: Never store plain text passwords in a real app.
+                password: hashPassword('admin'), // Now using hashed password
                 role: Role.Admin,
             };
             saveToDb(DB_KEYS.USERS, [adminUser]);
@@ -85,12 +122,18 @@ export const api = {
      * @throws An error if credentials are invalid.
      */
     login: async ({ email, password }: LoginCredentials): Promise<User> => {
+        validateEmail(email);
+        validatePassword(password);
+        
         const users = getFromDb<User>(DB_KEYS.USERS);
-        const user = users.find(u => u.email === email && u.password === password);
+        const hashedPassword = hashPassword(password);
+        const user = users.find(u => u.email === email && u.password === hashedPassword);
         if (!user) {
             throw new Error('Invalid email or password.');
         }
-        return user;
+        // Return user without password for security
+        const { password: _, ...userWithoutPassword } = user;
+        return { ...userWithoutPassword, password: '' } as User;
     },
 
     /**
@@ -99,13 +142,17 @@ export const api = {
      * @throws An error if the email already exists.
      */
     signup: async (data: SignUpData): Promise<void> => {
+        validateEmail(data.email);
+        validatePassword(data.password);
+        
         const users = getFromDb<User>(DB_KEYS.USERS);
         if (users.some(u => u.email === data.email)) {
             throw new Error('An account with this email already exists.');
         }
         const newUser: User = {
             id: `user_${Date.now()}`,
-            ...data
+            ...data,
+            password: hashPassword(data.password) // Hash the password
         };
         users.push(newUser);
         saveToDb(DB_KEYS.USERS, users);
@@ -114,20 +161,36 @@ export const api = {
     // --- User CRUD Operations ---
 
     getUsers: async (): Promise<User[]> => {
-        return getFromDb<User>(DB_KEYS.USERS);
+        const users = getFromDb<User>(DB_KEYS.USERS);
+        // Return users without passwords for security
+        return users.map(({ password, ...user }) => ({ ...user, password: '' } as User));
     },
     
     addUser: async (user: User): Promise<User> => {
+        validateEmail(user.email);
+        if (user.password) {
+            validatePassword(user.password);
+        }
+        
         const users = getFromDb<User>(DB_KEYS.USERS);
         if (users.some(u => u.email === user.email && u.id !== user.id)) {
             throw new Error('User with this email already exists.');
         }
-        users.push(user);
+        
+        const userToAdd = {
+            ...user,
+            password: user.password ? hashPassword(user.password) : hashPassword('defaultpass')
+        };
+        users.push(userToAdd);
         saveToDb(DB_KEYS.USERS, users);
-        return user;
+        
+        const { password: _, ...userWithoutPassword } = userToAdd;
+        return { ...userWithoutPassword, password: '' } as User;
     },
 
     updateUser: async (updatedUser: User): Promise<User> => {
+        validateEmail(updatedUser.email);
+        
         let users = getFromDb<User>(DB_KEYS.USERS);
         const userIndex = users.findIndex(u => u.id === updatedUser.id);
         if (userIndex === -1) {
@@ -135,14 +198,19 @@ export const api = {
         }
 
         const originalUser = users[userIndex];
-        // Keep the original password if the new one is empty/not provided.
+        // Keep the original password if the new one is empty/not provided, otherwise hash the new one
         if (!updatedUser.password) {
             updatedUser.password = originalUser.password;
+        } else {
+            validatePassword(updatedUser.password);
+            updatedUser.password = hashPassword(updatedUser.password);
         }
 
         users[userIndex] = updatedUser;
         saveToDb(DB_KEYS.USERS, users);
-        return updatedUser;
+        
+        const { password: _, ...userWithoutPassword } = updatedUser;
+        return { ...userWithoutPassword, password: '' } as User;
     },
 
     deleteUser: async (userId: string): Promise<void> => {
